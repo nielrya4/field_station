@@ -1,0 +1,42 @@
+{% macro table(data, labels=None) %}
+    <style>
+        table.table_list {
+            border-collapse: collapse;
+            width: 100%;
+            color: black;
+        }
+        td.table_list, th.table_list {
+            text-align: center;
+            padding: 20px;
+            margin: 10px
+        }
+        tr.table_list:nth-child(even) {
+            background-color: #dddddd;
+        }
+        tr.table_list:nth-child(odd) {
+            background-color: white;
+        }
+    </style>
+    <div class="table_list">
+        <table class="table_list">
+            {% if labels != None %}
+                <tr class="table_list">
+                    {% for label in labels %}
+                        <th class="table_list">
+                            {{ label }}
+                        </th>
+                    {% endfor %}
+                </tr>
+            {% endif %}
+            {% for row in data %}
+                <tr class="table_list">
+                    {% for cell in row %}
+                        <td class="table_list">
+                            {{ cell }}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endmacro %}

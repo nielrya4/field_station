@@ -1,0 +1,4 @@
+{% macro weather_type(text, weather) %}
+    <img src="{{ url_for('static', filename='weather/img/' + weather + '.png') }}" alt="{{ text }}" width="64" height="64">
+    {{ text }}
+{% endmacro %}

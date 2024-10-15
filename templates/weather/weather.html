@@ -1,12 +1,12 @@
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lost River Field Station</title>
     {% include 'global/head.html' %}
 </head>
 <body>
     {% import 'global/navbar.html' as nav %}
+    {% import 'weather/weather_types.html' as weather%}
+    {% import "global/table.html" as table  %}
     {% set pages = [
                     ('Home', '/'),
                     ('Borah Cam', '/borah-cam'),
@@ -20,11 +20,20 @@
             <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
                 <br />
                 <h1>Live Weather at the Field Station</h1>
-                <h3>Updated every x amount of time</h3>
+                <h3>Updated every hour</h3>
+                <br />
+                <div style="width:50%; display: block; margin-left: auto; margin-right: auto;">
+                    {{ table.table([
+                        ["Weather:", weather.weather_type("Foggy", "fog_day")],
+                        ["Temperature (°C):", 25],
+                        ["Solar Radiation (kWh/m^2):", "5555"],
+                        ["Wind Speed (km/hr):", 7],
+                        ["Relative Humidity (%):", 12],
+                    ]) }}
+                </div>
                 <br />
             </div>
         </div>
     </div>
-
 </body>
 </html>

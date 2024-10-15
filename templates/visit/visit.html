@@ -1,9 +1,16 @@
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lost River Field Station</title>
     {% include 'global/head.html' %}
+    <style>
+        #map-canvas {
+            height: 70%;
+            width: 100%;
+            margin-left:auto;
+            margin-right:auto;
+            border: 2px;
+        }
+    </style>
 </head>
 <body>
     {% import 'global/navbar.html' as nav %}
@@ -20,7 +27,12 @@
             <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
                 <br />
                 <h1>Visit Us!</h1>
-                <h3>asdfasdfasdf</h3>
+                <br />
+                <p>
+                    We are located at 5930 Bartlett Point Rd, Mackay, ID 83251
+                </p>
+                <iframe id="map-canvas" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2867.4497417029556!2d-113.89169142390011!3d44.05342097108605!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x54a9d962307648f9%3A0x855b231782707302!2sLost%20River%20Field%20Station!5e0!3m2!1sen!2sus!4v1728975724041!5m2!1sen!2sus" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <br />
                 <br />
             </div>
         </div>
