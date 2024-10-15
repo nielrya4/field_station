@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.2" width="150mm" height="150mm" viewBox="6000 8000 9000 10000" preserveAspectRatio="xMidYMid" fill-rule="evenodd" stroke-width="28.222" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <linearGradient id="gradient1" x1="7695" y1="8139" x2="13437" y2="18085" gradientUnits="userSpaceOnUse">
+   <stop offset="0" style="stop-color:rgb(2,63,98)"/>
+   <stop offset="1" style="stop-color:rgb(255,215,215)"/>
+  </linearGradient>
+ </defs>
+ <g>
+  <g>
+   <rect fill="none" x="6362" y="8908" width="8409" height="8409"/>
+   <path style="fill:url(#gradient1)" d="M 10566,17315 L 6363,17315 6363,8909 14769,8909 14769,17315 10566,17315 Z"/>
+   <path fill="none" stroke="rgb(114,159,207)" d="M 10566,17315 L 6363,17315 6363,8909 14769,8909 14769,17315 10566,17315 Z"/>
+   <rect fill="rgb(253,233,169)" x="7235" y="13832" width="6700" height="2400"/>
+   <path fill="rgb(0,128,0)" d="M 14016,16241 L 13921,16241 13921,13728 14111,13728 14111,16241 14016,16241 Z"/>
+   <path fill="rgb(253,233,169)" d="M 10554,12405 L 13877,13847 10554,13847 10554,12405 Z"/>
+   <path fill="none" stroke="rgb(0,128,0)" stroke-width="203" d="M 14031,13788 L 10603,12307"/>
+   <path fill="rgb(253,233,169)" d="M 10568,11333 L 7233,12808 10568,12808 10568,11333 Z"/>
+   <path fill="rgb(0,128,0)" d="M 10658,12350 L 10562,12350 10562,11152 10754,11152 10754,12350 10658,12350 Z"/>
+   <path fill="none" stroke="rgb(0,128,0)" stroke-width="203" d="M 7149,12714 L 10723,11183"/>
+   <path fill="rgb(253,233,169)" d="M 8982,13861 L 7249,13861 7249,12789 10715,12789 10715,13861 8982,13861 Z"/>
+   <path fill="rgb(0,128,0)" d="M 7180,16242 L 7085,16242 7085,12656 7275,12656 7275,16242 Z"/>
+   <path fill="rgb(255,255,255)" stroke="rgb(0,0,0)" stroke-width="50" d="M 8939,16213 L 7601,16213 7601,13229 10276,13229 10276,16213 Z"/>
+   <path fill="rgb(128,128,128)" d="M 10561,17315 L 6364,17315 6364,16210 14757,16210 14757,17315 10561,17315 Z"/>
+  </g>
+ </g>
+</svg>

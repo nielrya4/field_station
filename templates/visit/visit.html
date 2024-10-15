@@ -1,0 +1,29 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lost River Field Station</title>
+    {% include 'global/head.html' %}
+</head>
+<body>
+    {% import 'global/navbar.html' as nav %}
+    {% set pages = [
+                    ('Home', '/'),
+                    ('Borah Cam', '/borah-cam'),
+                    ('Live Weather', '/weather'),
+                    ('Visit Us', '/visit'),
+                    ('Contact Us','/contact')
+    ] %}
+    {{ nav.navbar(pages, 'Visit Us') }}
+    <div class="container" style="background-color: #677881;">
+        <div style="margin: 20px;">
+            <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
+                <br />
+                <h1>Visit Us!</h1>
+                <h3>asdfasdfasdf</h3>
+                <br />
+            </div>
+        </div>
+    </div>
+</body>
+</html>

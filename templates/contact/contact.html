@@ -1,0 +1,55 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lost River Field Station</title>
+    {% include 'global/head.html' %}
+</head>
+<body>
+    {% import 'global/navbar.html' as nav %}
+    {% set pages = [
+                    ('Home', '/'),
+                    ('Borah Cam', '/borah-cam'),
+                    ('Live Weather', '/weather'),
+                    ('Visit Us', '/visit'),
+                    ('Contact Us','/contact')
+    ] %}
+    {{ nav.navbar(pages, 'Contact Us') }}
+    <div class="container" style="background-color: #677881;">
+        <div style="margin: 20px;">
+            <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
+                <br />
+                <form>
+                    <br />
+                    <h1>Contact Us</h1>
+                    <br />
+                    <div class="form-group">
+                        <label for="name_input">Full name</label>
+                        <input type="text" class="form-control" id="name_input" placeholder="Full Name">
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <label for="email_input">Email address</label>
+                        <input type="email" class="form-control" id="email_input" aria-describedby="emailHelp" placeholder="Enter email">
+                        <small id="emailHelp" class="form-text" style="color:white;">We'll never share your email with anyone else.</small>
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <label for="message_input">Message</label>
+                        <textarea id="message_input" style="height: 200px" class="form-control" placeholder="Message"></textarea>
+                    </div>
+                    <br />
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+                <br />
+                <p>
+                    We are also reachable at 208-588-2030 (Field Station) and 208-282-3365 (ISU Geosciences Department)
+                    during work hours (09:00-17:00 Mountain Time)
+                </p>
+                <br />
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

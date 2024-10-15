@@ -1,0 +1,57 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lost River Field Station</title>
+    {% include 'global/head.html' %}
+</head>
+<body>
+    {% import 'global/navbar.html' as nav %}
+    {% set pages = [
+                    ('Home', '/'),
+                    ('Borah Cam', '/borah-cam'),
+                    ('Live Weather', '/weather'),
+                    ('Visit Us', '/visit'),
+                    ('Contact Us','/contact')
+    ] %}
+    {{ nav.navbar(pages, 'Home') }}
+    <div class="container" style="background-color: #677881;">
+        <div style="margin: 20px;">
+            <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
+                <br />
+                <h1>Lost River Field Station</h1>
+                <h3>Located on the banks of the Big Lost River, at the foot of Borah Peak</h3>
+                <br />
+                <img alt="Field Station" src="{{ url_for('static', filename='home/img/camp_trucks.jpg') }}" style="width: 100%;">
+                <h6>The Field Station and the Fleet</h6>
+                <br />
+                <p>
+                    LRFS is home to the ISU Geology Field Camp.  Field Geology is a 6-credit capstone course taken by about
+                    10 ISU B.S. Geology students and about 20 out-of-state students each year.  In fact, the ISU Field
+                    Geology course is one of the best in the country, and has been taken recently by students from Harvard,
+                    Virginia Tech, Whitman, Pomona, and Pacific Lutheran colleges, as well as BSU, WSU, UI, and USU geology
+                    students.
+                </p>
+                <p>
+                    The facility is built on ten acres near Chilly Idaho, on the Big Lost River and directly in front of
+                    Borah Peak.  The barn contains a work room, kitchen, three full bathrooms and computer loft.  It was
+                    built in 2002 and donated to the ISU Geosciences Department in 2011 by Paul and Katie Link.
+                </p>
+                <p>
+                    During the 5-week field geology course, students work six days a week.  Mapping exercises in the
+                    Pioneer, Boulder, and Lost River Mountains within an hour of LRFS.  This includes an incredible
+                    diversity of geology. Mapping areas include near Darlington, Borah Peak, Carlson Lake, Boulder Creek
+                    and Copper Basin. During the course, students make eight geologic maps, and are introduced to
+                    Geotechnology via mapping tablets and ARC GIS.
+                </p>
+                <br />
+                <img alt="Snowy Borah Peak" src="{{ url_for('static', filename='home/img/lost_river_range.jpg') }}" style="width: 100%;">
+                <h6>Lost River Range</h6>
+            </div>
+            <br />
+            <br />
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+</body>
+</html>

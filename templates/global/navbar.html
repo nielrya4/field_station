@@ -1,0 +1,37 @@
+{% macro  navbar(pages, active_page) %}
+    <style>
+        .topnav {
+            background-color: #333;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            left: 0;
+            top: 0;
+        }
+        .topnav a {
+            float: left;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            font-size: 17px;
+        }
+        .topnav a:hover {
+            background-color: #004388;
+            color: white;
+        }
+        .topnav a.active {
+            background-color: #04AA6D;
+            color: white;
+        }
+    </style>
+    <div class="topnav">
+        {% for page_name, url in pages %}
+            <a {% if page_name == active_page %} class="active" {% endif %} href="{{ url }}">{{ page_name }}</a>
+        {% endfor %}
+        <img src="{{ url_for('static', filename='global/img/field_station_logo.svg') }}" style="margin-left: 5px; margin-right: 5px; float: right !important;" width="52" height="52" alt="field station logo">
+        <img onclick="window.open('https://www.isu.edu/', '_blank').focus();" src="{{ url_for('static', filename='global/img/isu_logo.png') }}" style="margin-top: 5px; margin-left: 5px; margin-right: 5px; float: right !important; cursor: pointer" width="130" height="45" alt="ISU logo">
+    </div>
+    <br />
+    <br />
+{% endmacro %}
