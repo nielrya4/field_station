@@ -4,17 +4,10 @@
     {% include 'global/head.html' %}
 </head>
 <body>
-    {% import 'global/navbar.html' as nav %}
     {% import 'weather/weather_types.html' as weather%}
-    {% import "global/table.html" as table  %}
-    {% set pages = [
-                    ('Home', '/'),
-                    ('Borah Cam', '/borah-cam'),
-                    ('Live Weather', '/weather'),
-                    ('Visit Us', '/visit'),
-                    ('Contact Us','/contact')
-    ] %}
-    {{ nav.navbar(pages, 'Live Weather') }}
+    {% import 'global/table.html' as table %}
+    {% import 'global/navbar.html' as nav %}
+    {{ nav.navbar_init("Live Weather") }}
     <div class="container" style="background-color: #677881;">
         <div style="margin: 20px;">
             <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">

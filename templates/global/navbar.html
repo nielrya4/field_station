@@ -18,7 +18,7 @@
             padding: 14px 16px;
             text-decoration: none;
         }
-        .topnav a:hover {
+        .topnav a.page:hover {
             background-color: #004388;
             color: white;
         }
@@ -33,11 +33,29 @@
     </style>
     <div class="topnav">
         {% for page_name, url in pages %}
-            <a {% if page_name == active_page %} class="active" {% endif %} href="{{ url }}">{{ page_name }}</a>
+            {% if page_name != "|" %}
+                <a {% if page_name == active_page %} class="page active" {% else %} class="page" {% endif %} href="{{ url }}">{{ page_name }}</a>
+            {% else %}
+                <a>|</a>
+            {% endif %}
         {% endfor %}
         <img src="{{ url_for('static', filename='global/img/field_station_logo.svg') }}" style="margin-left: 2px; margin-right: 2px; margin-top: 5px; float: right !important;" alt="field station logo">
         <img onclick="window.open('https://www.isu.edu/', '_blank').focus();" src="{{ url_for('static', filename='global/img/isu_logo.png') }}" style="margin-top: 5px; margin-left: 2px; margin-right: 2px; float: right !important; cursor: pointer"  alt="ISU logo">
     </div>
     <br />
     <br />
+{% endmacro %}
+
+{% macro navbar_init(active_page) %}
+    {% import 'global/navbar.html' as nav %}
+    {% set pages = [
+                    ('Home', '/'),
+                    ('Facilities', '/facilities'),
+                    ('Borah Cam', '/borah-cam'),
+                    ('Live Weather', '/weather'),
+                    ('Visit Us', '/visit'),
+                    ('Contact Us','/contact'),
+                    ('Gallery', '/gallery')
+    ] %}
+    {{ nav.navbar(pages, active_page) }}
 {% endmacro %}

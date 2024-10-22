@@ -5,14 +5,7 @@
 </head>
 <body>
     {% import 'global/navbar.html' as nav %}
-    {% set pages = [
-                    ('Home', '/'),
-                    ('Borah Cam', '/borah-cam'),
-                    ('Live Weather', '/weather'),
-                    ('Visit Us', '/visit'),
-                    ('Contact Us','/contact')
-    ] %}
-    {{ nav.navbar(pages, 'Home') }}
+    {{ nav.navbar_init("Home") }}
     <div class="container" style="background-color: #677881;">
         <div style="margin: 20px;">
             <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
