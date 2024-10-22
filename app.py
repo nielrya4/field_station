@@ -1,6 +1,7 @@
 from flask import Flask
 from pages import borah_cam, contact, home, visit, weather
 
+
 app = Flask(__name__)
 
 home.register(app)

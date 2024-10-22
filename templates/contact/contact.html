@@ -17,37 +17,36 @@
         <div style="margin: 20px;">
             <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
                 <br />
-                <form>
+                <form action="/contact" method="post">
                     <br />
                     <h1>Contact Us</h1>
                     <br />
                     <div class="form-group">
                         <label for="name_input">Full name</label>
-                        <input type="text" class="form-control" id="name_input" placeholder="Full Name">
+                        <input type="text" class="form-control" name="name_input" id="name_input" placeholder="Full Name" required>
                     </div>
                     <br />
                     <div class="form-group">
                         <label for="email_input">Email address</label>
-                        <input type="email" class="form-control" id="email_input" aria-describedby="emailHelp" placeholder="Enter email">
+                        <input type="email" class="form-control" name="email_input" id="email_input" aria-describedby="emailHelp" placeholder="Enter email" required>
                         <small id="emailHelp" class="form-text" style="color:white;">We'll never share your email with anyone else.</small>
                     </div>
                     <br />
                     <div class="form-group">
                         <label for="message_input">Message</label>
-                        <textarea id="message_input" style="height: 200px" class="form-control" placeholder="Message"></textarea>
+                        <textarea name="message_input" id="message_input" style="height: 200px" class="form-control" placeholder="Message" required></textarea>
                     </div>
                     <br />
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
                 <br />
                 <p>
-                    We are also reachable at 208-588-2030 (Field Station) and 208-282-3365 (ISU Geosciences Department)
+                    We are also reachable at <a href="tel:+12085882030" style="color:white !important;">208-588-2030</a> (Field Station) and <a href="tel:+12082823365" style="color:white !important;">208-282-3365</a> (ISU Geosciences Department)
                     during work hours (09:00-17:00 Mountain Time)
                 </p>
                 <br />
             </div>
         </div>
     </div>
-
 </body>
 </html>
