@@ -1,34 +1,74 @@
 <html lang="en">
 <head>
-    <title>Lost River Field Station</title>
+    <title>Visit Us - Lost River Field Station</title>
     {% include 'global/head.html' %}
-    <style>
-        #map-canvas {
-            height: 70%;
-            width: 100%;
-            margin-left:auto;
-            margin-right:auto;
-            border: 2px;
-        }
-    </style>
 </head>
 <body>
     {% import 'global/navbar.html' as nav %}
     {{ nav.navbar_init("Visit Us") }}
-    <div class="container" style="background-color: #677881;">
-        <div style="margin: 20px;">
-            <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
-                <br />
-                <h1>Visit Us!</h1>
-                <br />
-                <p>
-                    We are located at 5930 Bartlett Point Rd, Mackay, ID 83251
-                </p>
-                <iframe id="map-canvas" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2867.4497417029556!2d-113.89169142390011!3d44.05342097108605!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x54a9d962307648f9%3A0x855b231782707302!2sLost%20River%20Field%20Station!5e0!3m2!1sen!2sus!4v1728975724041!5m2!1sen!2sus" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                <br />
-                <br />
+    <div class="container-fluid nature-gradient-bg py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8 text-center px-3">
+                    <h1 class="display-4 display-md-3 fw-bold mb-3">Visit Us</h1>
+                    <h3 class="h4 h-md-3 lead mb-4">Plan your visit to the Lost River Field Station</h3>
+                </div>
             </div>
         </div>
     </div>
+    
+    <div class="container my-3 my-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="earth-container p-3 p-md-4">
+                    <div class="row g-3 g-md-4">
+                        <div class="col-12 col-md-6">
+                            <div class="card border-0 h-100" style="background-color: #f8f9fa;">
+                                <div class="card-body p-3 p-md-4">
+                                    <h5 class="card-title text-success mb-3">Location</h5>
+                                    <p class="card-text">
+                                        <strong>Address:</strong><br>
+                                        5930 Bartlett Point Rd<br>
+                                        Mackay, ID 83251
+                                    </p>
+                                    <p class="card-text">
+                                        The field station is located at the base of Borah Peak in the Lost River Range, 
+                                        providing easy access to some of Idaho's most spectacular geology.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 col-md-6">
+                            <div class="card border-0 h-100" style="background-color: #f8f9fa;">
+                                <div class="card-body p-3 p-md-4">
+                                    <h5 class="card-title text-success mb-3">Visit Information</h5>
+                                    <p class="card-text">
+                                        The Lost River Field Station primarily serves ISU Geology Field Camp students 
+                                        and researchers. Please contact us in advance to arrange visits or tours.
+                                    </p>
+                                    <p class="card-text">
+                                        <small>Best access is via Highway 93 to Bartlett Point Road.</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card border-0 mt-3 mt-md-4" style="background-color: #f8f9fa;">
+                        <div class="card-body p-3 p-md-4">
+                            <h5 class="card-title text-success mb-3">Interactive Map</h5>
+                            <div class="ratio ratio-16x9">
+                                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2867.4497417029556!2d-113.89169142390011!3d44.05342097108605!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x54a9d962307648f9%3A0x855b231782707302!2sLost%20River%20Field%20Station!5e0!3m2!1sen!2sus!4v1728975724041!5m2!1sen!2sus" 
+                                        allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="rounded">
+                                </iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'global/scripts.html' %}
 </body>
 </html>

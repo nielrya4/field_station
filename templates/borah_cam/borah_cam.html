@@ -1,21 +1,46 @@
 <html lang="en">
 <head>
-    <title>Lost River Field Station</title>
+    <title>Borah Cam - Lost River Field Station</title>
     {% include 'global/head.html' %}
 </head>
 <body>
     {% import 'global/navbar.html' as nav %}
     {{ nav.navbar_init("Borah Cam") }}
-    <div class="container" style="background-color: #677881;">
-        <div style="margin: 20px;">
-            <div style="width:75%; display: block; margin-left: auto; margin-right: auto;">
-                <br />
-                <h1>Live View of Borah Peak</h1>
-                <img src="/borah-cam/video-feed" alt="Webcam feed">
-                <br />
-                <br />
+    <div class="container-fluid nature-gradient-bg py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8 text-center px-3">
+                    <h1 class="display-4 display-md-3 fw-bold mb-3">Live View of Borah Peak</h1>
+                    <h3 class="h4 h-md-3 lead mb-4">Real-time webcam view from the Lost River Field Station</h3>
+                </div>
             </div>
         </div>
     </div>
+    
+    <div class="container my-3 my-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="earth-container p-3 p-md-4">
+                    <div class="text-center">
+                        <img src="/borah-cam/video-feed" alt="Webcam feed" class="img-fluid rounded mb-3">
+                        <p class="small mb-4">Live webcam view of Borah Peak - Idaho's highest mountain at 12,662 feet</p>
+                        
+                        <div class="card border-0" style="background-color: #f8f9fa;">
+                            <div class="card-body p-3 p-md-4">
+                                <h5 class="card-title text-success mb-3">About Borah Peak</h5>
+                                <p class="card-text">
+                                    Borah Peak stands as Idaho's tallest mountain and is part of the Lost River Range. 
+                                    This live camera provides a continuous view of the peak's changing conditions throughout 
+                                    the day and seasons. The peak is a popular destination for climbers and offers spectacular 
+                                    views of the surrounding wilderness.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'global/scripts.html' %}
 </body>
 </html>

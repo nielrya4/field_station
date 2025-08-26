@@ -1,49 +1,67 @@
 {% macro  navbar(pages, active_page) %}
     <style>
-        .topnav {
-            background-color: #333;
-            overflow: hidden;
-            position: fixed;
-            font-size: calc(0.5rem + 0.5vw);
-            width: 100%;
-            left: 0;
-            top: 0;
+        .navbar-brand img {
+            height: 40px;
+            width: auto;
         }
-        .topnav a {
-            float: left;
-            color: white;
-            text-align: center;
-            max-width: 15%;
-            height: auto;
-            padding: 14px 16px;
-            text-decoration: none;
+        .navbar-nav .nav-link:hover {
+            background-color: #198754;
+            color: white !important;
+            border-radius: 4px;
         }
-        .topnav a.page:hover {
-            background-color: #004388;
-            color: white;
+        .navbar-nav .nav-link.active {
+            background-color: #20c997 !important;
+            color: white !important;
+            border-radius: 4px;
         }
-        .topnav a.active {
-            background-color: #04AA6D;
-            color: white;
+        .navbar-toggler {
+            border: none;
         }
-        .topnav img{
-            height: calc(45*(0.5rem + 0.5vw)/17);
-            width: calc(130*(0.5rem + 0.5vw)/17);
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+        @media (max-width: 991.98px) {
+            .navbar-nav .nav-link {
+                padding: 0.75rem 1rem;
+                margin: 0.25rem 0;
+            }
         }
     </style>
-    <div class="topnav">
-        {% for page_name, url in pages %}
-            {% if page_name != "|" %}
-                <a {% if page_name == active_page %} class="page active" {% else %} class="page" {% endif %} href="{{ url }}">{{ page_name }}</a>
-            {% else %}
-                <a>|</a>
-            {% endif %}
-        {% endfor %}
-        <img src="{{ url_for('static', filename='global/img/field_station_logo.svg') }}" style="margin-left: 2px; margin-right: 2px; margin-top: 5px; float: right !important;" alt="field station logo">
-        <img onclick="window.open('https://www.isu.edu/', '_blank').focus();" src="{{ url_for('static', filename='global/img/isu_logo.png') }}" style="margin-top: 5px; margin-left: 2px; margin-right: 2px; float: right !important; cursor: pointer"  alt="ISU logo">
-    </div>
-    <br />
-    <br />
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="{{ url_for('static', filename='global/img/field_station_logo.svg') }}" alt="Field Station Logo" class="me-2">
+                <span class="d-none d-md-inline">Lost River Field Station</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto">
+                    {% for page_name, url in pages %}
+                        {% if page_name != "|" %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if page_name == active_page %}active{% endif %}" href="{{ url }}">{{ page_name }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+                
+                <div class="d-flex align-items-center">
+                    <img src="{{ url_for('static', filename='global/img/isu_logo.png') }}" 
+                         onclick="window.open('https://www.isu.edu/', '_blank').focus();" 
+                         style="height: 35px; width: auto; cursor: pointer;" 
+                         alt="ISU Logo" 
+                         class="ms-2">
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <div style="padding-top: 76px;"></div>
 {% endmacro %}
 
 {% macro navbar_init(active_page) %}
@@ -53,6 +71,7 @@
                     ('Facilities', '/facilities'),
                     ('Borah Cam', '/borah-cam'),
                     ('Live Weather', '/weather'),
+                    ('Seismic Activity', '/seismic'),
                     ('Visit Us', '/visit'),
                     ('Contact Us','/contact'),
                     ('Gallery', '/gallery')
