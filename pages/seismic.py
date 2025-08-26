@@ -129,6 +129,21 @@ def plot_stream(stream, title, yaxis_title, unit_label, filename_html, filename_
         paper_bgcolor='white'
     )
     
+    # Configure modebar to only show zoom in, zoom out, reset axes, and download as SVG
+    config = {
+        'modeBarButtons': [
+            ['toImage', 'pan2d', 'zoomIn2d', 'zoomOut2d', 'resetScale2d']
+        ],
+        'displaylogo': False,
+        'toImageButtonOptions': {
+            'format': 'svg',
+            'filename': 'seismic_plot',
+            'height': 300 * len(stream),
+            'width': 1000,
+            'scale': 1
+        }
+    }
+    
     # Add white background with gridlines for all subplots
     fig.update_xaxes(
         showgrid=True,
@@ -147,7 +162,7 @@ def plot_stream(stream, title, yaxis_title, unit_label, filename_html, filename_
         linecolor='black'
     )
     # Save as HTML for fast loading
-    fig.write_html(filename_html)
+    fig.write_html(filename_html, config=config)
     if filename_svg:
         fig.write_image(filename_svg)
 
