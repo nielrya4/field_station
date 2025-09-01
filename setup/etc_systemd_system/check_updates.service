@@ -1,0 +1,13 @@
+[Unit]
+Description=Check for updates on GitHub and run build script
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=LRFS_PATH/check_updates.sh
+WorkingDirectory=LRFS_PATH
+User=LRFS_USER
+Group=LRFS_GROUP
+
+[Install]
+WantedBy=multi-user.target

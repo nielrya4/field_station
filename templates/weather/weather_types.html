@@ -1,4 +1,16 @@
 {% macro weather_type(text, weather) %}
-    <img src="{{ url_for('static', filename='weather/img/' + weather + '.png') }}" alt="{{ text }}" width="64" height="64">
+    {% if weather == "clear_day" %}
+        <i class="fas fa-sun" style="font-size: 2rem; color: #ffc107;"></i>
+    {% elif weather == "partly_cloudy_day" %}
+        <i class="fas fa-cloud-sun" style="font-size: 2rem; color: #6c757d;"></i>
+    {% elif weather == "fog_day" %}
+        <i class="fas fa-smog" style="font-size: 2rem; color: #adb5bd;"></i>
+    {% elif weather == "wind" %}
+        <i class="fas fa-wind" style="font-size: 2rem; color: #0dcaf0;"></i>
+    {% elif weather == "snow" %}
+        <i class="fas fa-snowflake" style="font-size: 2rem; color: #e9ecef;"></i>
+    {% else %}
+        <i class="fas fa-cloud" style="font-size: 2rem; color: #6c757d;"></i>
+    {% endif %}
     {{ text }}
 {% endmacro %}

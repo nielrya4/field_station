@@ -7,8 +7,23 @@
         }
         td.table_list, th.table_list {
             text-align: center;
-            padding: 20px;
-            margin: 10px
+            padding: 15px;
+            margin: 15px
+        }
+		td.table_list:nth-child(1) {
+            text-align: right;
+            padding-right: 5px;
+		   	width: 40%;
+        }
+        td.table_list:nth-child(2) {
+            text-align: right;
+            padding-right: 5px;
+		   	width: 20%;
+        }
+        td.table_list:nth-child(3) {
+            text-align: left;
+            padding-left: 5px;
+            width: 40%;
         }
         tr.table_list:nth-child(even) {
             background-color: #dddddd;
@@ -32,7 +47,7 @@
                 <tr class="table_list">
                     {% for cell in row %}
                         <td class="table_list">
-                            {{ cell }}
+                            {{ cell|safe }}
                         </td>
                     {% endfor %}
                 </tr>

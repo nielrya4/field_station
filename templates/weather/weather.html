@@ -23,32 +23,72 @@
         <div class="row justify-content-center">
             <div class="col-12 col-lg-10">
                 <div class="earth-container p-3 p-md-4">
-                    <p class="text-center small mb-4">Weather data updated every hour from our field station sensors</p>
+                    <div class="text-center mb-3">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="units" id="metric" checked>
+                            <label class="btn btn-outline-success btn-sm" for="metric">Metric</label>
+                            <input type="radio" class="btn-check" name="units" id="imperial">
+                            <label class="btn btn-outline-success btn-sm" for="imperial">Imperial</label>
+                        </div>
+                    </div>
                     
                     <div class="row justify-content-center">
                         <div class="col-12 col-md-8">
                             <div class="card border-0" style="background-color: #f8f9fa;">
                                 <div class="card-body p-3 p-md-4">
                                     <h5 class="card-title text-success mb-4 text-center">Current Conditions</h5>
-                                    {{ table.table([
-                                        ["Weather:", weather.weather_type("Foggy", "fog_day")],
-                                        ["Temperature (°C):", 25],
-                                        ["Solar Radiation (kWh/m²):", "5555"],
-                                        ["Wind Speed (km/hr):", 7],
-                                        ["Relative Humidity (%):", 12],
-                                    ]) }}
+                                    {% if error %}
+                                        <div class="alert alert-warning text-center">
+                                            {{ error }}
+                                        </div>
+                                    {% elif weather_data %}
+                                        {{ table.table([
+                                            ["Weather:", "", weather.weather_type(weather_data.weather_type[0], weather_data.weather_type[1])],
+                                            ["Temperature:", 
+                                             ('<span class="metric-value">' ~ weather_data.temperature ~ '</span><span class="imperial-value" style="display:none;">' ~ weather_data.temperature_f ~ '</span>') if weather_data.temperature != "--" else "--", 
+                                             '<span class="metric-unit">°C</span><span class="imperial-unit" style="display:none;">°F</span>'],
+                                            ["Relative Humidity:", weather_data.humidity if weather_data.humidity != "--" else "--", "%"],
+                                            ["Dew Point:", 
+                                             ('<span class="metric-value">' ~ weather_data.dew_point ~ '</span><span class="imperial-value" style="display:none;">' ~ weather_data.dew_point_f ~ '</span>') if weather_data.dew_point != "--" else "--",
+                                             '<span class="metric-unit">°C</span><span class="imperial-unit" style="display:none;">°F</span>'],
+                                            ["Pressure:", 
+                                             ('<span class="metric-value">' ~ weather_data.pressure ~ '</span><span class="imperial-value" style="display:none;">' ~ weather_data.pressure_inhg ~ '</span>') if weather_data.pressure != "--" else "--",
+                                             '<span class="metric-unit">mbar</span><span class="imperial-unit" style="display:none;">inHg</span>'],
+                                            ["Wind Speed:", 
+                                             ('<span class="metric-value">' ~ weather_data.wind_speed ~ '</span><span class="imperial-value" style="display:none;">' ~ weather_data.wind_speed_mph ~ '</span>') if weather_data.wind_speed != "--" else "--",
+                                             '<span class="metric-unit">km/hr</span><span class="imperial-unit" style="display:none;">mph</span>'],
+                                            ["Wind Gust:", 
+                                             ('<span class="metric-value">' ~ weather_data.wind_gust ~ '</span><span class="imperial-value" style="display:none;">' ~ weather_data.wind_gust_mph ~ '</span>') if weather_data.wind_gust != "--" else "--",
+                                             '<span class="metric-unit">km/hr</span><span class="imperial-unit" style="display:none;">mph</span>'],
+                                            ["Wind Direction:", weather_data.wind_direction if weather_data.wind_direction != "--" else "--", "°"],
+                                            ["Solar Radiation:", weather_data.solar_radiation if weather_data.solar_radiation != "--" else "--", "W/m²"],
+                                            ["Rainfall:", 
+                                             ('<span class="metric-value">' ~ weather_data.rain ~ '</span><span class="imperial-value" style="display:none;">' ~ weather_data.rain_in ~ '</span>') if weather_data.rain != "--" else "--",
+                                             '<span class="metric-unit">mm</span><span class="imperial-unit" style="display:none;">in</span>']
+                                        ]) }}
+                                    {% else %}
+                                        {{ table.table([
+                                            ["Weather:", weather.weather_type("Partly Cloudy", "partly_cloudy_day")],
+                                            ["Temperature (°C):", "Loading..."],
+                                            ["Solar Radiation (W/m²):", "Loading..."],
+                                            ["Wind Speed (km/hr):", "Loading..."],
+                                            ["Relative Humidity (%):", "Loading..."],
+                                        ]) }}
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+					<br />
                     <div class="card border-0 mt-3 mt-md-4" style="background-color: #f8f9fa;">
                         <div class="card-body p-3 p-md-4">
                             <h5 class="card-title text-success mb-3">About Our Weather Station</h5>
                             <p class="card-text">
-                                Our weather monitoring equipment provides real-time environmental data from the Lost River Field Station. 
-                                Located at the base of Borah Peak, our station captures the unique high-desert mountain climate of central Idaho. 
-                                This data helps researchers understand local climate patterns and assists field camp planning.
+                                Our weather monitoring equipment (HOBO RX3000) provides real-time environmental data
+								from the Lost River Field Station. Weather data is updated every hour.
+								<br />
+								<br />
+								Last updated on {{ weather_data.timestamp }}
                             </p>
                         </div>
                     </div>
@@ -57,5 +97,34 @@
         </div>
     </div>
     {% include 'global/scripts.html' %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const metricRadio = document.getElementById('metric');
+            const imperialRadio = document.getElementById('imperial');
+            
+            function toggleUnits() {
+                const isMetric = metricRadio.checked;
+                
+                // Toggle value spans
+                document.querySelectorAll('.metric-value').forEach(el => {
+                    el.style.display = isMetric ? 'inline' : 'none';
+                });
+                document.querySelectorAll('.imperial-value').forEach(el => {
+                    el.style.display = isMetric ? 'none' : 'inline';
+                });
+                
+                // Toggle unit spans
+                document.querySelectorAll('.metric-unit').forEach(el => {
+                    el.style.display = isMetric ? 'inline' : 'none';
+                });
+                document.querySelectorAll('.imperial-unit').forEach(el => {
+                    el.style.display = isMetric ? 'none' : 'inline';
+                });
+            }
+            
+            metricRadio.addEventListener('change', toggleUnits);
+            imperialRadio.addEventListener('change', toggleUnits);
+        });
+    </script>
 </body>
 </html>

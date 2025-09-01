@@ -1,0 +1,22 @@
+[Unit]
+Description=uWSGI instance to serve Lost River Field Station website
+After=network-online.target
+
+[Service]
+ExecStart=/home/lrfs/lrfs/venv/bin/uwsgi --ini /home/lrfs/lrfs/lrfs.ini
+WorkingDirectory=/home/lrfs/lrfs
+Restart=always
+RestartSec=5
+User=lrfs
+Group=lrfs
+StandardOutput=append:/var/log/uwsgi-lrfs.log
+StandardError=append:/var/log/uwsgi-lrfs.log
+Environment="PYTHONUNBUFFERED=1"
+
+# Ensures the service runs even when no user is logged in
+TTYPath=/dev/console
+StandardOutput=append:/var/log/lrfs.log
+StandardError=append:/var/log/lrfs.log
+
+[Install]
+WantedBy=multi-user.target
