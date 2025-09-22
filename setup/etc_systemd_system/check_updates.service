@@ -4,10 +4,10 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=LRFS_PATH/check_updates.sh
-WorkingDirectory=LRFS_PATH
-User=LRFS_USER
-Group=LRFS_GROUP
+ExecStart=/home/fieldstation/field_station/check_updates.sh
+WorkingDirectory=/home/fieldstation/field_station
+User=fieldstation
+Group=fieldstation
 
 [Install]
 WantedBy=multi-user.target

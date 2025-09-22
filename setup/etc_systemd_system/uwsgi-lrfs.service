@@ -3,12 +3,12 @@ Description=uWSGI instance to serve Lost River Field Station website
 After=network-online.target
 
 [Service]
-ExecStart=/home/lrfs/lrfs/venv/bin/uwsgi --ini /home/lrfs/lrfs/lrfs.ini
-WorkingDirectory=/home/lrfs/lrfs
+ExecStart=/home/fieldstation/field_station/venv/bin/uwsgi --ini /home/fieldstation/field_station/lrfs.ini
+WorkingDirectory=/home/fieldstation/field_station
 Restart=always
 RestartSec=5
-User=lrfs
-Group=lrfs
+User=fieldstation
+Group=fieldstation
 StandardOutput=append:/var/log/uwsgi-lrfs.log
 StandardError=append:/var/log/uwsgi-lrfs.log
 Environment="PYTHONUNBUFFERED=1"

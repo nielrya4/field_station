@@ -1,9 +1,9 @@
 [Unit]
-Description=Run check for updates every 24 hours
+Description=Run check for updates every 2 minutes
 
 [Timer]
 OnBootSec=10min
-OnUnitActiveSec=24h
+OnUnitActiveSec=2min
 Unit=check_updates.service
 
 [Install]

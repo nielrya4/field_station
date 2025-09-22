@@ -4,8 +4,8 @@ After=network-online.target
 
 [Service]
 Type=simple
-User=lrfs
-ExecStart=/usr/local/bin/cloudflared tunnel --config /home/lrfs/.cloudflared/config.yml run
+User=fieldstation
+ExecStart=/usr/local/bin/cloudflared tunnel --config /home/fieldstation/.cloudflared/config.yml run
 Restart=always
 RestartSec=5
 Environment="PYTHONUNBUFFERED=1"
