@@ -242,10 +242,13 @@ def plot_stream(stream, title, yaxis_title, unit_label, filename_html, filename_
 
 def register(app):
     from flask import render_template
+    import time
 
     @app.route('/seismic', methods=['GET'])
     def seismic():
-        return render_template('seismic/seismic.html')
+        # Generate cache buster based on 5-minute intervals to match plot update frequency
+        cache_buster = int(time.time() // 300)  # Updates every 5 minutes
+        return render_template('seismic/seismic.html', cache_buster=cache_buster)
 
     # Start background thread for plot generation
     if not hasattr(app, '_plot_thread_started'):
