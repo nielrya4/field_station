@@ -22,7 +22,11 @@
             <div class="col-12 col-lg-10">
                 <div class="earth-container p-3 p-md-4">
                     <div class="text-center">
-                        <img src="/borah-cam/video-feed" alt="Webcam feed" class="img-fluid rounded mb-3">
+                        <img src="/borah-cam/video-feed" alt="Webcam feed" class="img-fluid rounded mb-3" id="webcam-feed">
+                        <script>
+                            // Prevent browser caching of video stream
+                            document.getElementById('webcam-feed').src = '/borah-cam/video-feed?' + Date.now();
+                        </script>
                         <p class="small mb-4">Live webcam view of Borah Peak - Idaho's highest mountain at 12,662 feet</p>
                         
                         <div class="card border-0" style="background-color: #f8f9fa;">
