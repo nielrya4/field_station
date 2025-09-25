@@ -1,3 +1,8 @@
+#!/bin/bash
+
+# Read password from stdin
+read -r PASSWORD
+
 echo "Updating lrfs code..."
 git pull
 
@@ -8,11 +13,11 @@ pip install -r requirements.txt
 deactivate
 
 echo "stopping lrfs..."
-sudo systemctl stop uwsgi-lrfs
-sudo systemctl stop cloudflared
+echo "$PASSWORD" | sudo -S systemctl stop uwsgi-lrfs
+echo "$PASSWORD" | sudo -S systemctl stop cloudflared
 echo "reloading daemons..."
-sudo systemctl daemon-reload
+echo "$PASSWORD" | sudo -S systemctl daemon-reload
 echo "starting up lrfs..."
-sudo systemctl start uwsgi-lrfs
-sudo systemctl start cloudflared
+echo "$PASSWORD" | sudo -S systemctl start uwsgi-lrfs
+echo "$PASSWORD" | sudo -S systemctl start cloudflared
 echo "lrfs is now up and running"
