@@ -4,6 +4,7 @@
 read -r PASSWORD
 
 echo "Updating lrfs code..."
+git stash
 git pull
 
 echo "Installing Python dependencies..."

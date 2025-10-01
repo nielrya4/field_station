@@ -170,7 +170,7 @@ def plot_stream(stream, title, yaxis_title, unit_label, filename_html, filename_
         fig.add_trace(go.Scatter(
             x=times_dt, y=data,
             name=f"{trace.stats.channel} ({unit_label})",
-            line=dict(width=1, color='blue'),
+            line=dict(width=1, color='green'),
             mode='lines'
         ), row=1, col=1)
     except Exception as e:
