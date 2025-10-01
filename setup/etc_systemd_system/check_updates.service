@@ -7,6 +7,7 @@ Type=oneshot
 ExecStart=/home/fieldstation/field_station/check_updates.sh
 WorkingDirectory=/home/fieldstation/field_station
 User=fieldstation
+
 Group=fieldstation
 
 [Install]
