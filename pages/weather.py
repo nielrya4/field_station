@@ -188,10 +188,18 @@ def register(app):
             return jsonify(response_data)
             
         except ValueError as e:
-            return jsonify({'error': str(e)}), 400
+            return jsonify({
+                'error': f"ValueError: {str(e)}",
+                'error_type': 'ValueError',
+                'debug_info': f"Line: {e.__traceback__.tb_lineno if e.__traceback__ else 'unknown'}"
+            }), 400
         except Exception as e:
-            print(f"Error processing weather data request: {e}")
-            return jsonify({'error': 'Internal server error'}), 500
+            import traceback
+            return jsonify({
+                'error': f"Server Error: {str(e)}",
+                'error_type': type(e).__name__,
+                'debug_info': traceback.format_exc()
+            }), 500
 
 
 def get_hobolink_data():

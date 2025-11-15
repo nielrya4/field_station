@@ -384,7 +384,14 @@
 				if (data.success) {
 					displayDownloadLinks(data.files);
 				} else {
-					showError(data.error || 'An unknown error occurred.');
+					let errorMsg = data.error || 'An unknown error occurred.';
+					if (data.debug_info) {
+						errorMsg += '\n\nDebug Info:\n' + data.debug_info;
+					}
+					if (data.error_type) {
+						errorMsg += '\n\nError Type: ' + data.error_type;
+					}
+					showError(errorMsg);
 				}
 			})
 			.catch(error => {
@@ -395,7 +402,9 @@
 		
 		function showError(message) {
 			document.getElementById('loading_indicator').style.display = 'none';
-			document.getElementById('error_text').textContent = message;
+			// Use innerHTML and <pre> for better formatting of debug info
+			document.getElementById('error_text').innerHTML = '<pre style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em;">' + 
+				message.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
 			document.getElementById('error_message').style.display = 'block';
 		}
 		
