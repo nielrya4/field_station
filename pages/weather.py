@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
 import base64
 import io
@@ -6,8 +7,11 @@ from datetime import datetime, timedelta
 import os
 import pytz
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import plotly.graph_objects as go
-import plotly.express as px
 from plotly.subplots import make_subplots
 from typing import List
 
@@ -138,8 +142,10 @@ def register(app):
             for output_type in output_types:
                 if output_type in ['xlsx', 'csv']:
                     backend_output_types.append('excel')
-                elif output_type in ['svg', 'png', 'html']:
+                elif output_type == 'html':
                     backend_output_types.append('plotly')
+                elif output_type in ['svg', 'png']:
+                    backend_output_types.append('matplotlib')
                 else:
                     return jsonify({'error': f'Unknown output type: {output_type}'}), 400
             
@@ -161,10 +167,10 @@ def register(app):
                 'files': []
             }
             
-            # Handle plotly output - generate in-memory
+            # Handle plotly output (HTML)
             if 'plotly_data' in results:
-                plotly_files = results['plotly_data']
-                for plot_file in plotly_files:
+                plot_files = results['plotly_data']
+                for plot_file in plot_files:
                     if plot_file['type'] in output_types:
                         response_data['files'].append({
                             'filename': plot_file['filename'],
@@ -173,7 +179,19 @@ def register(app):
                             'data_url': plot_file['data_url']
                         })
             
-            # Handle excel output - generate in-memory
+            # Handle matplotlib output (PNG, SVG)
+            if 'matplotlib_data' in results:
+                plot_files = results['matplotlib_data']
+                for plot_file in plot_files:
+                    if plot_file['type'] in output_types:
+                        response_data['files'].append({
+                            'filename': plot_file['filename'],
+                            'type': plot_file['type'],
+                            'description': plot_file['description'],
+                            'data_url': plot_file['data_url']
+                        })
+            
+            # Handle excel output
             if 'excel_data' in results:
                 excel_files = results['excel_data']
                 for excel_file in excel_files:
@@ -435,18 +453,18 @@ def export_weather_data(metrics: List[str], output_types: List[str], time_start:
         metrics: List of metrics to export. Available options:
                 ['temperature', 'humidity', 'dew_point', 'pressure', 'wind_speed', 
                  'wind_gust', 'wind_direction', 'solar_radiation', 'rain']
-        output_types: List of output formats: ['plotly', 'excel'] 
+        output_types: List of output formats: ['plotly', 'matplotlib', 'excel'] 
         time_start: Start time in '%Y-%m-%d %H:%M:%S' format
         time_end: End time in '%Y-%m-%d %H:%M:%S' format
         units: Unit system to use: 'metric' or 'imperial'
         
     Returns:
-        Dictionary with output paths and/or plotly figures
+        Dictionary with output paths and/or figures
     """
     # Validate inputs
     valid_metrics = ['temperature', 'humidity', 'dew_point', 'pressure', 'wind_speed', 
                     'wind_gust', 'wind_direction', 'solar_radiation', 'rain']
-    valid_outputs = ['plotly', 'excel']
+    valid_outputs = ['plotly', 'matplotlib', 'excel']
     
     invalid_metrics = [m for m in metrics if m not in valid_metrics]
     invalid_outputs = [o for o in output_types if o not in valid_outputs]
@@ -558,9 +576,13 @@ def export_weather_data(metrics: List[str], output_types: List[str], time_start:
     
     results = {}
     
-    # Generate Plotly graph
+    # Generate Plotly HTML (interactive, no Chrome needed)
     if 'plotly' in output_types:
-        results['plotly_data'] = _create_plotly_graph(df_pivot, metrics, time_start_display, time_end_display, units)
+        results['plotly_data'] = _create_plotly_html(df_pivot, metrics, time_start_display, time_end_display, units)
+    
+    # Generate matplotlib plots (static PNG/SVG)
+    if 'matplotlib' in output_types:
+        results['matplotlib_data'] = _create_matplotlib_plot(df_pivot, metrics, time_start_display, time_end_display, units)
     
     # Generate Excel file
     if 'excel' in output_types:
@@ -568,10 +590,10 @@ def export_weather_data(metrics: List[str], output_types: List[str], time_start:
     
     return results
 
-def _create_plotly_graph(df_pivot, metrics: List[str], time_start: str, time_end: str, units: str = 'metric'):
-    """Create a Plotly graph for the weather data and return in-memory files."""
+def _create_plotly_html(df_pivot, metrics: List[str], time_start: str, time_end: str, units: str = 'metric'):
+    """Create an interactive Plotly HTML file (no Chrome/Chromium needed)."""
     
-    # Define units and colors for each metric (metric and imperial)
+    # Define units and colors for each metric
     metric_info = {
         'temperature': {'metric_unit': '°C', 'imperial_unit': '°F', 'color': 'red'},
         'humidity': {'metric_unit': '%', 'imperial_unit': '%', 'color': 'blue'},
@@ -600,12 +622,12 @@ def _create_plotly_graph(df_pivot, metrics: List[str], time_start: str, time_end
                 elif metric == 'rain':
                     df_plot[metric] = df_plot[metric] * 0.0393701
     
-    # Get appropriate unit label based on units system
+    # Get appropriate unit label
     def get_unit(metric):
         return metric_info[metric][f'{units}_unit']
     
     if len(metrics) == 1:
-        # Single metric - simple line plot with larger size (1200x800)
+        # Single metric - simple line plot
         fig = go.Figure()
         metric = metrics[0]
         if metric in df_plot.columns:
@@ -626,7 +648,7 @@ def _create_plotly_graph(df_pivot, metrics: List[str], time_start: str, time_end
                 height=800
             )
     else:
-        # Multiple metrics - subplot layout with larger size
+        # Multiple metrics - subplot layout
         fig = make_subplots(
             rows=len(metrics), cols=1,
             subplot_titles=[f"{m.replace('_', ' ').title()}" for m in metrics],
@@ -659,47 +681,116 @@ def _create_plotly_graph(df_pivot, metrics: List[str], time_start: str, time_end
             height=max(800, 200 * len(metrics))
         )
         
-        # Add x-axis title to the bottom subplot only
         fig.update_xaxes(title_text="Time", row=len(metrics), col=1)
-    
-    # For single metric plots, add the x-axis title normally
-    if len(metrics) == 1:
-        fig.update_layout(
-            xaxis_title="Time",
-            hovermode='x unified',
-            showlegend=True
-        )
-    else:
-        fig.update_layout(
-            hovermode='x unified',
-            showlegend=False
-        )
     
     # Generate base filename
     safe_start = time_start.replace(' ', '_').replace(':', '-')
     safe_end = time_end.replace(' ', '_').replace(':', '-')
     base_filename = f"weather_data_{safe_start}_to_{safe_end}"
     
-    # Generate in-memory files with base64 data URLs
+    # Generate HTML (no Chrome needed!)
+    html_data = fig.to_html(include_plotlyjs='cdn')
+    html_base64 = base64.b64encode(html_data.encode('utf-8')).decode('utf-8')
+    
+    return [{
+        'filename': f"{base_filename}.html",
+        'type': 'html',
+        'description': f'Interactive Weather Plot (HTML) - {base_filename}',
+        'data_url': f"data:text/html;base64,{html_base64}"
+    }]
+
+def _create_matplotlib_plot(df_pivot, metrics: List[str], time_start: str, time_end: str, units: str = 'metric'):
+    """Create matplotlib plots for the weather data and return in-memory files."""
+    
+    # Define units and colors for each metric
+    metric_info = {
+        'temperature': {'metric_unit': '°C', 'imperial_unit': '°F', 'color': 'red'},
+        'humidity': {'metric_unit': '%', 'imperial_unit': '%', 'color': 'blue'},
+        'dew_point': {'metric_unit': '°C', 'imperial_unit': '°F', 'color': 'orange'},
+        'pressure': {'metric_unit': 'mbar', 'imperial_unit': 'inHg', 'color': 'purple'},
+        'wind_speed': {'metric_unit': 'km/h', 'imperial_unit': 'mph', 'color': 'green'},
+        'wind_gust': {'metric_unit': 'km/h', 'imperial_unit': 'mph', 'color': 'darkgreen'},
+        'wind_direction': {'metric_unit': '°', 'imperial_unit': '°', 'color': 'brown'},
+        'solar_radiation': {'metric_unit': 'W/m²', 'imperial_unit': 'W/m²', 'color': 'gold'},
+        'rain': {'metric_unit': 'mm', 'imperial_unit': 'in', 'color': 'darkblue'}
+    }
+    
+    # Convert data to imperial if requested
+    df_plot = df_pivot.copy()
+    if units == 'imperial':
+        for metric in metrics:
+            if metric in df_plot.columns:
+                if metric == 'temperature':
+                    df_plot[metric] = df_plot[metric] * 9/5 + 32
+                elif metric == 'dew_point':
+                    df_plot[metric] = df_plot[metric] * 9/5 + 32
+                elif metric == 'pressure':
+                    df_plot[metric] = df_plot[metric] * 0.02953
+                elif metric in ['wind_speed', 'wind_gust']:
+                    df_plot[metric] = df_plot[metric] * 0.621371
+                elif metric == 'rain':
+                    df_plot[metric] = df_plot[metric] * 0.0393701
+    
+    # Get appropriate unit label
+    def get_unit(metric):
+        return metric_info[metric][f'{units}_unit']
+    
+    # Generate base filename
+    safe_start = time_start.replace(' ', '_').replace(':', '-')
+    safe_end = time_end.replace(' ', '_').replace(':', '-')
+    base_filename = f"weather_data_{safe_start}_to_{safe_end}"
+    
     plot_files = []
     
-    # Get the layout dimensions for export
-    layout_width = fig.layout.width or 1200
-    layout_height = fig.layout.height or (800 if len(metrics) == 1 else max(800, 350 * len(metrics)))
+    if len(metrics) == 1:
+        # Single metric - simple line plot
+        fig, ax = plt.subplots(figsize=(12, 6))
+        metric = metrics[0]
+        
+        if metric in df_plot.columns:
+            ax.plot(df_plot.index, df_plot[metric], 
+                   color=metric_info[metric]['color'], 
+                   linewidth=2, marker='o', markersize=3)
+            ax.set_xlabel('Time', fontsize=12)
+            ax.set_ylabel(f"{metric.replace('_', ' ').title()} ({get_unit(metric)})", fontsize=12)
+            ax.set_title(f"{metric.replace('_', ' ').title()} - {time_start} to {time_end}", fontsize=14)
+            ax.grid(True, alpha=0.3)
+            
+            # Format x-axis dates
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
+            plt.xticks(rotation=45, ha='right')
+            
+        plt.tight_layout()
+        
+    else:
+        # Multiple metrics - subplot layout
+        fig, axes = plt.subplots(len(metrics), 1, figsize=(12, 3*len(metrics)), sharex=True)
+        
+        if len(metrics) == 1:
+            axes = [axes]
+        
+        for i, metric in enumerate(metrics):
+            if metric in df_plot.columns:
+                axes[i].plot(df_plot.index, df_plot[metric], 
+                           color=metric_info[metric]['color'], 
+                           linewidth=2, marker='o', markersize=2)
+                axes[i].set_ylabel(f"{get_unit(metric)}", fontsize=10)
+                axes[i].set_title(f"{metric.replace('_', ' ').title()}", fontsize=11)
+                axes[i].grid(True, alpha=0.3)
+        
+        # Set xlabel only on bottom plot
+        axes[-1].set_xlabel('Time', fontsize=12)
+        axes[-1].xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
+        plt.xticks(rotation=45, ha='right')
+        
+        fig.suptitle(f"Weather Data - {time_start} to {time_end}", fontsize=14, y=0.995)
+        plt.tight_layout()
     
-    # SVG export with explicit dimensions
-    svg_data = fig.to_image(format="svg", width=layout_width, height=layout_height).decode('utf-8')
-    svg_base64 = base64.b64encode(svg_data.encode('utf-8')).decode('utf-8')
-    plot_files.append({
-        'filename': f"{base_filename}.svg",
-        'type': 'svg',
-        'description': f'Weather Plot (SVG) - {base_filename}',
-        'data_url': f"data:image/svg+xml;base64,{svg_base64}"
-    })
-    
-    # PNG export with explicit dimensions
-    png_data = fig.to_image(format="png", width=layout_width, height=layout_height)
-    png_base64 = base64.b64encode(png_data).decode('utf-8')
+    # Save as PNG
+    png_buffer = io.BytesIO()
+    plt.savefig(png_buffer, format='png', dpi=150, bbox_inches='tight')
+    png_buffer.seek(0)
+    png_base64 = base64.b64encode(png_buffer.getvalue()).decode('utf-8')
     plot_files.append({
         'filename': f"{base_filename}.png",
         'type': 'png',
@@ -707,15 +798,20 @@ def _create_plotly_graph(df_pivot, metrics: List[str], time_start: str, time_end
         'data_url': f"data:image/png;base64,{png_base64}"
     })
     
-    # HTML export
-    html_data = fig.to_html(include_plotlyjs='cdn')
-    html_base64 = base64.b64encode(html_data.encode('utf-8')).decode('utf-8')
+    # Save as SVG
+    svg_buffer = io.BytesIO()
+    plt.savefig(svg_buffer, format='svg', bbox_inches='tight')
+    svg_buffer.seek(0)
+    svg_base64 = base64.b64encode(svg_buffer.getvalue()).decode('utf-8')
     plot_files.append({
-        'filename': f"{base_filename}.html",
-        'type': 'html',
-        'description': f'Interactive Weather Plot (HTML) - {base_filename}',
-        'data_url': f"data:text/html;base64,{html_base64}"
+        'filename': f"{base_filename}.svg",
+        'type': 'svg',
+        'description': f'Weather Plot (SVG) - {base_filename}',
+        'data_url': f"data:image/svg+xml;base64,{svg_base64}"
     })
+    
+    # Close the figure to free memory
+    plt.close(fig)
     
     return plot_files
 
@@ -729,7 +825,7 @@ def _create_excel_export(df_pivot, metrics: List[str], time_start: str, time_end
     
     # Reset index to make timestamp a column and format as string for Excel compatibility
     df_export = df_pivot.reset_index()
-    df_export['timestamp'] = df_export['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')  # Convert to string format
+    df_export['timestamp'] = df_export['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
     
     # Convert data to imperial if requested
     if units == 'imperial':
@@ -748,7 +844,7 @@ def _create_excel_export(df_pivot, metrics: List[str], time_start: str, time_end
     
     df_export = df_export[['timestamp'] + [col for col in metrics if col in df_export.columns]]
     
-    # Add units to column names based on unit system
+    # Add units to column names
     unit_map = {
         'temperature': '°C' if units == 'metric' else '°F',
         'humidity': '%',
@@ -769,7 +865,7 @@ def _create_excel_export(df_pivot, metrics: List[str], time_start: str, time_end
     
     df_export = df_export.rename(columns=column_mapping)
     
-    # Generate in-memory files with base64 data URLs
+    # Generate in-memory files
     excel_files = []
     
     # Excel (.xlsx) export
@@ -798,4 +894,3 @@ def _create_excel_export(df_pivot, metrics: List[str], time_start: str, time_end
     
     print(f"Excel and CSV files generated in-memory: {base_filename}")
     return excel_files
-
