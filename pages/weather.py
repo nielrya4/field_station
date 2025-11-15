@@ -756,8 +756,9 @@ def _create_matplotlib_plot(df_pivot, metrics: List[str], time_start: str, time_
             ax.set_title(f"{metric.replace('_', ' ').title()} - {time_start} to {time_end}", fontsize=14)
             ax.grid(True, alpha=0.3)
             
-            # Format x-axis dates
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
+            # Format x-axis dates with timezone info
+            mountain_tz = pytz.timezone('US/Mountain')
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M MST', tz=mountain_tz))
             plt.xticks(rotation=45, ha='right')
             
         plt.tight_layout()
@@ -778,9 +779,10 @@ def _create_matplotlib_plot(df_pivot, metrics: List[str], time_start: str, time_
                 axes[i].set_title(f"{metric.replace('_', ' ').title()}", fontsize=11)
                 axes[i].grid(True, alpha=0.3)
         
-        # Set xlabel only on bottom plot
+        # Set xlabel only on bottom plot with timezone info
         axes[-1].set_xlabel('Time', fontsize=12)
-        axes[-1].xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
+        mountain_tz = pytz.timezone('US/Mountain')
+        axes[-1].xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M MST', tz=mountain_tz))
         plt.xticks(rotation=45, ha='right')
         
         fig.suptitle(f"Weather Data - {time_start} to {time_end}", fontsize=14, y=0.995)
