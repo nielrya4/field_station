@@ -11,7 +11,7 @@ echo "Installing Python dependencies..."
 # Activate virtual environment and install dependencies
 source venv/bin/activate
 pip install -r requirements.txt
-
+pip install flask-socketio python-socketio
 echo "Installing Chrome for kaleido..."
 # Install Chrome for plotly image generation
 echo "$PASSWORD" | sudo -S apt-get install -y chromium-browser chromium-chromedriver
