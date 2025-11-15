@@ -2,6 +2,7 @@
 <head>
     <title>Live Weather - Lost River Field Station</title>
     {% include 'global/head.html' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/MultiSelect.css') }}">
 </head>
 <body>
     {% import 'weather/weather_types.html' as weather%}
@@ -82,6 +83,77 @@
 					<br />
                     <div class="card border-0 mt-3 mt-md-4" style="background-color: #f8f9fa;">
                         <div class="card-body p-3 p-md-4">
+                            <h5 class="card-title text-success mb-3">Weather Data Request</h5>
+							<br />
+							<p class="card-text">
+								You can request data from our weather station. Select what type of data you want, the
+								dates and times over which you want the data, and format in which you want it, and the
+								units system to use.
+							</p>
+							<br />
+							<div>
+								<div class="row">
+									<div class="col">
+										<h6 class="card-text">Weather Type:</h6>
+										<div id="weather_type"></div>
+									</div>
+									<div class="col">
+										<h6 class="card-text">Output Type:</h6>
+										<div id="output_type"></div>
+									</div>
+								</div>
+								<br />
+								<div class="row">
+									<div class="col">
+										<h6><label class="card-text" for="start_date">Start Date/Time (Mountain Time):</label></h6>
+										<input id="start_date" class="form-control" type="datetime-local" />
+									</div>
+									<div class="col">
+										<h6><label class="card-text" for="end_date">End Date/Time (Mountain Time):</label></h6>
+										<input type="datetime-local" class="form-control" id="end_date">
+									</div>
+								</div>
+								<br />
+								<div class="row" style="text-align: left;">
+									<div class="col">
+										<h6><label class="card-text" for="unit_select">Units:</label></h6>
+										<select class="form-control" id="unit_select">
+											<option selected value="metric">Metric</option>
+											<option value="imperial">Imperial</option>
+										</select>
+									</div>
+									<div class="col">
+										<button type="button" id="request_data" class="btn btn-primary mt-4">Request Data</button>
+									</div>
+								</div>
+							</div>
+							<div id="download_data_div" style="display: none;">
+								<hr class="mt-4 mb-3">
+								<h6 class="card-title text-success mb-3">Download Files</h6>
+								<div id="download_links">
+									<!-- Download links will be populated here -->
+								</div>
+							</div>
+							<div id="loading_indicator" style="display: none;">
+								<hr class="mt-4 mb-3">
+								<div class="text-center">
+									<div class="spinner-border text-primary" role="status">
+										<span class="sr-only">Loading...</span>
+									</div>
+									<p class="mt-2">Processing your request...</p>
+								</div>
+							</div>
+							<div id="error_message" style="display: none;">
+								<hr class="mt-4 mb-3">
+								<div class="alert alert-danger" role="alert">
+									<strong>Error:</strong> <span id="error_text"></span>
+								</div>
+							</div>
+                        </div>
+                    </div>
+					<br />
+                    <div class="card border-0 mt-3 mt-md-4" style="background-color: #f8f9fa;">
+                        <div class="card-body p-3 p-md-4">
                             <h5 class="card-title text-success mb-3">About Our Weather Station</h5>
                             <p class="card-text">
                                 Our weather monitoring equipment (HOBO RX3000) provides real-time environmental data
@@ -124,7 +196,254 @@
             
             metricRadio.addEventListener('change', toggleUnits);
             imperialRadio.addEventListener('change', toggleUnits);
+            
+            // Set default datetime values to current Mountain Time
+            setDefaultMountainTime();
         });
+        
+        function setDefaultMountainTime() {
+            // Get current time in Mountain Time using proper timezone conversion
+            // This works for users anywhere in the world
+            const now = new Date();
+            
+            // Convert to Mountain Time using Intl.DateTimeFormat
+            // America/Denver handles MST/MDT automatically
+            const mountainTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Denver"}));
+            
+            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+            function formatForInput(date) {
+                // Create a new date object representing Mountain Time
+                const mtDate = new Date(date.toLocaleString("en-US", {timeZone: "America/Denver"}));
+                
+                const year = mtDate.getFullYear();
+                const month = String(mtDate.getMonth() + 1).padStart(2, '0');
+                const day = String(mtDate.getDate()).padStart(2, '0');
+                const hours = String(mtDate.getHours()).padStart(2, '0');
+                const minutes = String(mtDate.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+            
+            // Set end time to current Mountain Time
+            document.getElementById('end_date').value = formatForInput(now);
+            
+            // Set start time to 24 hours ago
+            const yesterdayUTC = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            document.getElementById('start_date').value = formatForInput(yesterdayUTC);
+        }
     </script>
+	<script src="{{ url_for('static', filename='global/scripts/MultiSelect.js') }}"></script>
+	<script>
+		const weatherTypeMultiSelect = new MultiSelect(document.getElementById('weather_type'), {
+			data: [
+				{
+					value: 'pressure',
+					text: 'Pressure',
+					selected: false
+				},
+				{
+					value: 'solar_radiation',
+					text: 'Solar Radiation',
+					selected: false
+				},
+				{
+					value: 'wind_speed',
+					text: 'Wind Speed',
+					selected: false
+				},
+				{
+					value: 'gust_speed',
+					text: 'Gust Speed',
+					selected: false
+				},
+				{
+					value: 'wind_direction',
+					text: 'Wind Direction',
+					selected: false
+				},
+				{
+					value: 'rainfall',
+					text: 'Rainfall',
+					selected: false
+				},
+				{
+					value: 'temperature',
+					text: 'Temperature',
+					selected: true
+				},
+				{
+					value: 'relative_humidity',
+					text: 'Relative Humidity',
+					selected: true
+				},
+				{
+					value: 'dew_point',
+					text: 'Dew Point',
+					selected: false
+				}
+			],
+			search: false,
+			selectAll: true
+		});
+
+		const outputTypeMultiSelect = new MultiSelect(document.getElementById('output_type'), {
+			data: [
+				{
+					value: 'xlsx',
+					text: 'Excel Sheet (.xlsx)',
+					selected: true
+				},
+				{
+					value: 'csv',
+					text: 'Comma-Separated Values (.csv)',
+					selected: false
+				},
+				{
+					value: 'svg',
+					text: 'Static Plot - Vector (.svg)',
+					selected: true
+				},
+                {
+                    value: 'png',
+					text: 'Static Plot - Raster (.png)',
+					selected: false
+				},
+                {
+					value: 'html',
+					text: 'Interactive Plot (.html)',
+					selected: false
+				}
+			],
+			search: false,
+			selectAll: true
+		});
+		
+		// Handle weather data request
+		document.getElementById('request_data').addEventListener('click', function() {
+			// Hide previous results and errors
+			document.getElementById('download_data_div').style.display = 'none';
+			document.getElementById('error_message').style.display = 'none';
+			document.getElementById('loading_indicator').style.display = 'block';
+			
+			// Get selected metrics
+			const selectedMetrics = weatherTypeMultiSelect.selectedValues;
+			
+			// Get selected output types
+			const selectedOutputTypes = outputTypeMultiSelect.selectedValues;
+			
+			// Get datetime values
+			const startDateTime = document.getElementById('start_date').value;
+			const endDateTime = document.getElementById('end_date').value;
+			const units = document.getElementById('unit_select').value;
+			
+			// Validate inputs
+			if (selectedMetrics.length === 0) {
+				showError('Please select at least one weather metric.');
+				return;
+			}
+			
+			if (selectedOutputTypes.length === 0) {
+				showError('Please select at least one output format.');
+				return;
+			}
+			
+			if (!startDateTime || !endDateTime) {
+				showError('Please select both start and end date/time.');
+				return;
+			}
+			
+			if (new Date(startDateTime) >= new Date(endDateTime)) {
+				showError('Start date/time must be before end date/time.');
+				return;
+			}
+			
+			// Convert datetime-local format to the backend format
+			const startFormatted = startDateTime.replace('T', ' ') + ':00';
+			const endFormatted = endDateTime.replace('T', ' ') + ':00';
+			
+			// Prepare request data
+			const requestData = {
+				metrics: selectedMetrics,
+				output_types: selectedOutputTypes,
+				start_datetime: startFormatted,
+				end_datetime: endFormatted,
+				units: units
+			};
+			
+			// Send request to Flask backend
+			fetch('/weather/request-data', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(requestData)
+			})
+			.then(response => response.json())
+			.then(data => {
+				document.getElementById('loading_indicator').style.display = 'none';
+				
+				if (data.success) {
+					displayDownloadLinks(data.files);
+				} else {
+					showError(data.error || 'An unknown error occurred.');
+				}
+			})
+			.catch(error => {
+				document.getElementById('loading_indicator').style.display = 'none';
+				showError('Network error: ' + error.message);
+			});
+		});
+		
+		function showError(message) {
+			document.getElementById('loading_indicator').style.display = 'none';
+			document.getElementById('error_text').textContent = message;
+			document.getElementById('error_message').style.display = 'block';
+		}
+		
+		function displayDownloadLinks(files) {
+			const downloadLinksDiv = document.getElementById('download_links');
+			downloadLinksDiv.innerHTML = '';
+			
+			if (files.length === 0) {
+				downloadLinksDiv.innerHTML = '<p>No files generated.</p>';
+			} else {
+				files.forEach(file => {
+					const linkDiv = document.createElement('div');
+					linkDiv.className = 'mb-2';
+					
+					// Create icon based on file type
+					let icon = '';
+					switch(file.type) {
+						case 'xlsx':
+							icon = '<img src="{{ url_for("static", filename="global/img/file_icons/xlsx.png") }}" alt="Excel" width="32" height="32" class="me-2">';
+							break;
+						case 'csv':
+							icon = '<img src="{{ url_for("static", filename="global/img/file_icons/csv.png") }}" alt="CSV" width="32" height="32" class="me-2">';
+							break;
+						case 'svg':
+							icon = '<img src="{{ url_for("static", filename="global/img/file_icons/svg.png") }}" alt="SVG" width="32" height="32" class="me-2">';
+							break;
+						case 'png':
+							icon = '<img src="{{ url_for("static", filename="global/img/file_icons/img.png") }}" alt="PNG" width="32" height="32" class="me-2">';
+							break;
+						case 'html':
+							icon = '<img src="{{ url_for("static", filename="global/img/file_icons/html.png") }}" alt="HTML" width="32" height="32" class="me-2">';
+							break;
+						default:
+							icon = '<i class="fas fa-file me-2"></i>';
+					}
+					
+					linkDiv.innerHTML = `
+						<a href="${file.data_url}" class="btn btn-outline-primary btn-sm" download="${file.filename}">
+							${icon}${file.description}
+						</a>
+					`;
+					
+					downloadLinksDiv.appendChild(linkDiv);
+				});
+			}
+			
+			document.getElementById('download_data_div').style.display = 'block';
+		}
+	</script>
 </body>
 </html>

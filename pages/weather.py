@@ -1,8 +1,84 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
+import base64
+import io
 import requests
 from datetime import datetime, timedelta
 import os
 import pytz
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+from typing import List
+
+class WeatherData:
+    def __init__(self, temperature=None, humidity=None, dew_point=None, pressure=None, 
+                 wind_speed=None, wind_gust=None, wind_direction=None, solar_radiation=None, 
+                 rain=None, timestamp=None, weather_type=None):
+        # Store all values in metric units
+        self.temperature = temperature  # Celsius
+        self.humidity = humidity  # Percentage
+        self.dew_point = dew_point  # Celsius
+        self.pressure = pressure  # mbar
+        self.wind_speed = wind_speed  # km/h
+        self.wind_gust = wind_gust  # km/h
+        self.wind_direction = wind_direction  # degrees
+        self.solar_radiation = solar_radiation  # W/m²
+        self.rain = rain  # mm
+        self.timestamp = timestamp
+        self.weather_type = weather_type
+    
+    def temperature_fahrenheit(self):
+        if self.temperature == '--' or self.temperature is None:
+            return '--'
+        return round(self.temperature * 9/5 + 32, 1)
+    
+    def dew_point_fahrenheit(self):
+        if self.dew_point == '--' or self.dew_point is None:
+            return '--'
+        return round(self.dew_point * 9/5 + 32, 1)
+    
+    def pressure_inhg(self):
+        if self.pressure == '--' or self.pressure is None:
+            return '--'
+        return round(self.pressure * 0.02953, 2)
+    
+    def wind_speed_mph(self):
+        if self.wind_speed == '--' or self.wind_speed is None:
+            return '--'
+        return round(self.wind_speed * 0.621371, 1)
+    
+    def wind_gust_mph(self):
+        if self.wind_gust == '--' or self.wind_gust is None:
+            return '--'
+        return round(self.wind_gust * 0.621371, 1)
+    
+    def rain_inches(self):
+        if self.rain == '--' or self.rain is None:
+            return '--'
+        return round(self.rain * 0.0393701, 2)
+    
+    def to_dict(self):
+        """Convert to dictionary format for template compatibility"""
+        return {
+            "temperature": self.temperature,
+            "temperature_f": self.temperature_fahrenheit(),
+            "humidity": self.humidity,
+            "dew_point": self.dew_point,
+            "dew_point_f": self.dew_point_fahrenheit(),
+            "pressure": self.pressure,
+            "pressure_inhg": self.pressure_inhg(),
+            "wind_speed": self.wind_speed,
+            "wind_speed_mph": self.wind_speed_mph(),
+            "wind_gust": self.wind_gust,
+            "wind_gust_mph": self.wind_gust_mph(),
+            "wind_direction": self.wind_direction,
+            "solar_radiation": self.solar_radiation,
+            "rain": self.rain,
+            "rain_in": self.rain_inches(),
+            "timestamp": self.timestamp,
+            "weather_type": self.weather_type
+        }
 
 def register(app):
     @app.route('/weather')
@@ -15,6 +91,108 @@ def register(app):
                 return render_template("weather/weather.html", error="Unable to retrieve weather data")
         except Exception as e:
             return render_template("weather/weather.html", error=f"Weather data unavailable: {str(e)}")
+
+    @app.route('/weather/request-data', methods=['POST'])
+    def request_weather_data():
+        try:
+            data = request.get_json()
+            
+            # Extract parameters from request
+            metrics = data.get('metrics', [])
+            output_types = data.get('output_types', [])
+            start_datetime = data.get('start_datetime')
+            end_datetime = data.get('end_datetime')
+            units = data.get('units', 'metric')
+            
+            # Validate required parameters
+            if not metrics:
+                return jsonify({'error': 'No metrics selected'}), 400
+            if not output_types:
+                return jsonify({'error': 'No output types selected'}), 400
+            if not start_datetime or not end_datetime:
+                return jsonify({'error': 'Start and end date/time are required'}), 400
+            
+            # Map frontend metric names to backend names
+            metric_mapping = {
+                'temperature': 'temperature',
+                'relative_humidity': 'humidity',
+                'dew_point': 'dew_point',
+                'pressure': 'pressure',
+                'wind_speed': 'wind_speed',
+                'gust_speed': 'wind_gust',
+                'wind_direction': 'wind_direction',
+                'solar_radiation': 'solar_radiation',
+                'rainfall': 'rain'
+            }
+            
+            # Convert frontend metric names to backend names
+            backend_metrics = []
+            for metric in metrics:
+                if metric in metric_mapping:
+                    backend_metrics.append(metric_mapping[metric])
+                else:
+                    return jsonify({'error': f'Unknown metric: {metric}'}), 400
+            
+            # Convert output types to backend format
+            backend_output_types = []
+            for output_type in output_types:
+                if output_type in ['xlsx', 'csv']:
+                    backend_output_types.append('excel')
+                elif output_type in ['svg', 'png', 'html']:
+                    backend_output_types.append('plotly')
+                else:
+                    return jsonify({'error': f'Unknown output type: {output_type}'}), 400
+            
+            # Remove duplicates
+            backend_output_types = list(set(backend_output_types))
+            
+            # Export the data
+            results = export_weather_data(
+                metrics=backend_metrics,
+                output_types=backend_output_types,
+                time_start=start_datetime,
+                time_end=end_datetime,
+                units=units
+            )
+            
+            # Prepare response
+            response_data = {
+                'success': True,
+                'files': []
+            }
+            
+            # Handle plotly output - generate in-memory
+            if 'plotly_data' in results:
+                plotly_files = results['plotly_data']
+                for plot_file in plotly_files:
+                    if plot_file['type'] in output_types:
+                        response_data['files'].append({
+                            'filename': plot_file['filename'],
+                            'type': plot_file['type'],
+                            'description': plot_file['description'],
+                            'data_url': plot_file['data_url']
+                        })
+            
+            # Handle excel output - generate in-memory
+            if 'excel_data' in results:
+                excel_files = results['excel_data']
+                for excel_file in excel_files:
+                    if excel_file['type'] in output_types:
+                        response_data['files'].append({
+                            'filename': excel_file['filename'],
+                            'type': excel_file['type'], 
+                            'description': excel_file['description'],
+                            'data_url': excel_file['data_url']
+                        })
+            
+            return jsonify(response_data)
+            
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        except Exception as e:
+            print(f"Error processing weather data request: {e}")
+            return jsonify({'error': 'Internal server error'}), 500
+
 
 def get_hobolink_data():
     api_token = "F3IhKKcqanCSo1SgFGPvhaIfs9sqxuPF4PFFHMsOwbOV1BbU"
@@ -63,25 +241,20 @@ def get_hobolink_data():
 
 def get_no_data_response():
     current_time = datetime.now()
-    return {
-        "temperature": "--",
-        "temperature_f": "--",
-        "humidity": "--",
-        "dew_point": "--",
-        "dew_point_f": "--",
-        "pressure": "--",
-        "pressure_inhg": "--",
-        "wind_speed": "--",
-        "wind_speed_mph": "--",
-        "wind_gust": "--",
-        "wind_gust_mph": "--",
-        "wind_direction": "--",
-        "solar_radiation": "--",
-        "rain": "--",
-        "rain_in": "--",
-        "timestamp": current_time.strftime('%Y-%m-%d %H:%M:%S'),
-        "weather_type": ("No Data", "partly_cloudy_day")
-    }
+    weather_data = WeatherData(
+        temperature="--",
+        humidity="--",
+        dew_point="--",
+        pressure="--",
+        wind_speed="--",
+        wind_gust="--",
+        wind_direction="--",
+        solar_radiation="--",
+        rain="--",
+        timestamp=current_time.strftime('%Y-%m-%d %H:%M:%S'),
+        weather_type=("No Data", "partly_cloudy_day")
+    )
+    return weather_data.to_dict()
 
 def parse_hobolink_weather_data(raw_data):
     if not raw_data or 'data' not in raw_data or not raw_data['data']:
@@ -162,35 +335,22 @@ def parse_hobolink_weather_data(raw_data):
         else:
             latest_timestamp = '--'
         
-        # Calculate imperial values
-        temp_f = round(temperature * 9/5 + 32, 1) if temperature != '--' else '--'
-        dew_point_f = round(dew_point * 9/5 + 32, 1) if dew_point != '--' else '--'
-        pressure_inhg = round(pressure * 0.02953, 2) if pressure != '--' else '--'
-        wind_speed_mph = round(wind_speed * 0.621371, 1) if wind_speed != '--' else '--'
-        wind_gust_mph = round(wind_gust * 0.621371, 1) if wind_gust != '--' else '--'
-        rain_in = round(rain * 0.0393701, 2) if rain != '--' else '--'
+        # Create WeatherData instance with metric values
+        weather_data = WeatherData(
+            temperature=temperature,
+            humidity=humidity,
+            dew_point=dew_point,
+            pressure=pressure,
+            wind_speed=wind_speed,
+            wind_gust=wind_gust,
+            wind_direction=wind_direction,
+            solar_radiation=solar_radiation,
+            rain=rain,
+            timestamp=latest_timestamp,
+            weather_type=determine_weather_type_from_sensors(temperature, humidity, wind_speed)
+        )
         
-        weather_data = {
-            "temperature": temperature,
-            "temperature_f": temp_f,
-            "humidity": humidity,
-            "dew_point": dew_point,
-            "dew_point_f": dew_point_f,
-            "pressure": pressure,
-            "pressure_inhg": pressure_inhg,
-            "wind_speed": wind_speed,
-            "wind_speed_mph": wind_speed_mph,
-            "wind_gust": wind_gust,
-            "wind_gust_mph": wind_gust_mph,
-            "wind_direction": wind_direction,
-            "solar_radiation": solar_radiation,
-            "rain": rain,
-            "rain_in": rain_in,
-            "timestamp": latest_timestamp,
-            "weather_type": determine_weather_type_from_sensors(temperature, humidity, wind_speed)
-        }
-        
-        return weather_data
+        return weather_data.to_dict()
     except Exception as e:
         print(f"Error parsing HOBOLINK weather data: {e}")
         return None
@@ -216,4 +376,418 @@ def determine_weather_type_from_sensors(temp, humidity, wind_speed):
             return ("Partly Cloudy", "partly_cloudy_day")
     except (ValueError, TypeError):
         return ("No Data", "partly_cloudy_day")
+
+def get_historical_weather_data(time_start: str, time_end: str):
+    """
+    Fetch historical weather data from the API for a given time range.
+    
+    Args:
+        time_start: Start time in '%Y-%m-%d %H:%M:%S' format
+        time_end: End time in '%Y-%m-%d %H:%M:%S' format
+        
+    Returns:
+        List of weather readings with timestamps
+    """
+    api_token = "F3IhKKcqanCSo1SgFGPvhaIfs9sqxuPF4PFFHMsOwbOV1BbU"
+    api_url = "https://api.licor.cloud/v1/data"
+    
+    headers = {
+        "Authorization": f"Bearer {api_token}"
+    }
+    
+    params = {
+        "loggers": "22167865",
+        "start_date_time": time_start,
+        "end_date_time": time_end
+    }
+    
+    try:
+        response = requests.get(api_url, headers=headers, params=params, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+        
+        if not data.get('data'):
+            print("No historical data returned from HOBOLINK API")
+            return []
+            
+        return data['data']
+        
+    except requests.exceptions.RequestException as e:
+        print(f"HOBOLINK API error: {e}")
+        return []
+    except Exception as e:
+        print(f"Error fetching historical weather data: {e}")
+        return []
+
+def export_weather_data(metrics: List[str], output_types: List[str], time_start: str, time_end: str, units: str = 'metric'):
+    """
+    Export weather data for specified metrics and time range.
+    
+    Args:
+        metrics: List of metrics to export. Available options:
+                ['temperature', 'humidity', 'dew_point', 'pressure', 'wind_speed', 
+                 'wind_gust', 'wind_direction', 'solar_radiation', 'rain']
+        output_types: List of output formats: ['plotly', 'excel'] 
+        time_start: Start time in '%Y-%m-%d %H:%M:%S' format
+        time_end: End time in '%Y-%m-%d %H:%M:%S' format
+        units: Unit system to use: 'metric' or 'imperial'
+        
+    Returns:
+        Dictionary with output paths and/or plotly figures
+    """
+    # Validate inputs
+    valid_metrics = ['temperature', 'humidity', 'dew_point', 'pressure', 'wind_speed', 
+                    'wind_gust', 'wind_direction', 'solar_radiation', 'rain']
+    valid_outputs = ['plotly', 'excel']
+    
+    invalid_metrics = [m for m in metrics if m not in valid_metrics]
+    invalid_outputs = [o for o in output_types if o not in valid_outputs]
+    
+    if invalid_metrics:
+        raise ValueError(f"Invalid metrics: {invalid_metrics}. Valid options: {valid_metrics}")
+    if invalid_outputs:
+        raise ValueError(f"Invalid output types: {invalid_outputs}. Valid options: {valid_outputs}")
+    
+    # Parse time strings - input is in Mountain Time, convert to UTC for API
+    try:
+        # Parse as Mountain Time
+        mountain_tz = pytz.timezone('US/Mountain')
+        start_dt_naive = datetime.strptime(time_start, '%Y-%m-%d %H:%M:%S')
+        end_dt_naive = datetime.strptime(time_end, '%Y-%m-%d %H:%M:%S')
+        
+        # Localize to Mountain Time
+        start_dt_mountain = mountain_tz.localize(start_dt_naive)
+        end_dt_mountain = mountain_tz.localize(end_dt_naive)
+        
+        # Convert to UTC for API call
+        start_dt_utc = start_dt_mountain.astimezone(pytz.UTC)
+        end_dt_utc = end_dt_mountain.astimezone(pytz.UTC)
+        
+        # Preserve original Mountain Time strings for display
+        time_start_display = time_start
+        time_end_display = time_end
+        
+        # Update time strings for API call
+        time_start_utc = start_dt_utc.strftime('%Y-%m-%d %H:%M:%S')
+        time_end_utc = end_dt_utc.strftime('%Y-%m-%d %H:%M:%S')
+        
+    except ValueError as e:
+        raise ValueError(f"Invalid time format. Use '%Y-%m-%d %H:%M:%S': {e}")
+    
+    if start_dt_mountain >= end_dt_mountain:
+        raise ValueError("Start time must be before end time")
+    
+    # Fetch historical data
+    print(f"Fetching weather data from {time_start_utc} to {time_end_utc}...")
+    raw_data = get_historical_weather_data(time_start_utc, time_end_utc)
+    
+    if not raw_data:
+        raise ValueError("No data available for the specified time range")
+    
+    # Sensor ID mapping
+    sensor_map = {
+        'temperature': '21768159-1',
+        'humidity': '21768159-2', 
+        'dew_point': '21768159-3',
+        'pressure': '21733030-1',
+        'solar_radiation': '21742342-1',
+        'wind_speed': '21755059-1',
+        'wind_gust': '21755059-2', 
+        'wind_direction': '21755059-3',
+        'rain': '21764951-1'
+    }
+    
+    # Process data into structured format
+    processed_data = []
+    mountain_tz = pytz.timezone('US/Mountain')
+    
+    for reading in raw_data:
+        sensor_sn = reading.get('sensor_sn')
+        timestamp_str = reading.get('timestamp', '')
+        value = reading.get('value')
+        
+        if not timestamp_str or value is None:
+            continue
+            
+        try:
+            # Convert UTC timestamp to Mountain Time
+            utc_time = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            mountain_time = utc_time.astimezone(mountain_tz)
+            
+            # Find metric name for this sensor
+            metric_name = None
+            for metric, sensor_id in sensor_map.items():
+                if sensor_sn == sensor_id:
+                    metric_name = metric
+                    break
+            
+            if metric_name and metric_name in metrics:
+                # Convert units to metric
+                converted_value = float(value)
+                if metric_name in ['wind_speed', 'wind_gust']:
+                    # Convert from m/s to km/h
+                    converted_value = round(converted_value * 3.6, 1)
+                
+                processed_data.append({
+                    'timestamp': mountain_time,
+                    'metric': metric_name,
+                    'value': converted_value
+                })
+                
+        except (ValueError, TypeError) as e:
+            print(f"Error processing reading: {e}")
+            continue
+    
+    if not processed_data:
+        raise ValueError("No valid data found for specified metrics in the time range")
+    
+    # Convert to pandas DataFrame
+    df = pd.DataFrame(processed_data)
+    
+    # Pivot to have metrics as columns
+    df_pivot = df.pivot_table(index='timestamp', columns='metric', values='value', aggfunc='mean')
+    df_pivot = df_pivot.sort_index()
+    
+    results = {}
+    
+    # Generate Plotly graph
+    if 'plotly' in output_types:
+        results['plotly_data'] = _create_plotly_graph(df_pivot, metrics, time_start_display, time_end_display, units)
+    
+    # Generate Excel file
+    if 'excel' in output_types:
+        results['excel_data'] = _create_excel_export(df_pivot, metrics, time_start_display, time_end_display, units)
+    
+    return results
+
+def _create_plotly_graph(df_pivot, metrics: List[str], time_start: str, time_end: str, units: str = 'metric'):
+    """Create a Plotly graph for the weather data and return in-memory files."""
+    
+    # Define units and colors for each metric (metric and imperial)
+    metric_info = {
+        'temperature': {'metric_unit': '°C', 'imperial_unit': '°F', 'color': 'red'},
+        'humidity': {'metric_unit': '%', 'imperial_unit': '%', 'color': 'blue'},
+        'dew_point': {'metric_unit': '°C', 'imperial_unit': '°F', 'color': 'orange'},
+        'pressure': {'metric_unit': 'mbar', 'imperial_unit': 'inHg', 'color': 'purple'},
+        'wind_speed': {'metric_unit': 'km/h', 'imperial_unit': 'mph', 'color': 'green'},
+        'wind_gust': {'metric_unit': 'km/h', 'imperial_unit': 'mph', 'color': 'darkgreen'},
+        'wind_direction': {'metric_unit': '°', 'imperial_unit': '°', 'color': 'brown'},
+        'solar_radiation': {'metric_unit': 'W/m²', 'imperial_unit': 'W/m²', 'color': 'gold'},
+        'rain': {'metric_unit': 'mm', 'imperial_unit': 'in', 'color': 'darkblue'}
+    }
+    
+    # Convert data to imperial if requested
+    df_plot = df_pivot.copy()
+    if units == 'imperial':
+        for metric in metrics:
+            if metric in df_plot.columns:
+                if metric == 'temperature':
+                    df_plot[metric] = df_plot[metric] * 9/5 + 32
+                elif metric == 'dew_point':
+                    df_plot[metric] = df_plot[metric] * 9/5 + 32
+                elif metric == 'pressure':
+                    df_plot[metric] = df_plot[metric] * 0.02953
+                elif metric in ['wind_speed', 'wind_gust']:
+                    df_plot[metric] = df_plot[metric] * 0.621371
+                elif metric == 'rain':
+                    df_plot[metric] = df_plot[metric] * 0.0393701
+    
+    # Get appropriate unit label based on units system
+    def get_unit(metric):
+        return metric_info[metric][f'{units}_unit']
+    
+    if len(metrics) == 1:
+        # Single metric - simple line plot with larger size (1200x800)
+        fig = go.Figure()
+        metric = metrics[0]
+        if metric in df_plot.columns:
+            fig.add_trace(go.Scatter(
+                x=df_plot.index,
+                y=df_plot[metric],
+                mode='lines+markers',
+                name=f"{metric.replace('_', ' ').title()}",
+                line=dict(color=metric_info[metric]['color'])
+            ))
+            
+            fig.update_layout(
+                title=f"{metric.replace('_', ' ').title()} - {time_start} to {time_end}",
+                xaxis_title="Time",
+                yaxis_title=f"{metric.replace('_', ' ').title()} ({get_unit(metric)})",
+                hovermode='x unified',
+                width=1200,
+                height=800
+            )
+    else:
+        # Multiple metrics - subplot layout with larger size
+        fig = make_subplots(
+            rows=len(metrics), cols=1,
+            subplot_titles=[f"{m.replace('_', ' ').title()}" for m in metrics],
+            shared_xaxes=True,
+            vertical_spacing=0.06
+        )
+        
+        for i, metric in enumerate(metrics, 1):
+            if metric in df_plot.columns:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_plot.index,
+                        y=df_plot[metric],
+                        mode='lines+markers',
+                        name=metric.replace('_', ' ').title(),
+                        line=dict(color=metric_info[metric]['color']),
+                        showlegend=False
+                    ),
+                    row=i, col=1
+                )
+                
+                fig.update_yaxes(
+                    title_text=f"{get_unit(metric)}", 
+                    row=i, col=1
+                )
+        
+        fig.update_layout(
+            title=f"Weather Data - {time_start} to {time_end}",
+            width=1200,
+            height=max(800, 200 * len(metrics))
+        )
+        
+        # Add x-axis title to the bottom subplot only
+        fig.update_xaxes(title_text="Time", row=len(metrics), col=1)
+    
+    # For single metric plots, add the x-axis title normally
+    if len(metrics) == 1:
+        fig.update_layout(
+            xaxis_title="Time",
+            hovermode='x unified',
+            showlegend=True
+        )
+    else:
+        fig.update_layout(
+            hovermode='x unified',
+            showlegend=False
+        )
+    
+    # Generate base filename
+    safe_start = time_start.replace(' ', '_').replace(':', '-')
+    safe_end = time_end.replace(' ', '_').replace(':', '-')
+    base_filename = f"weather_data_{safe_start}_to_{safe_end}"
+    
+    # Generate in-memory files with base64 data URLs
+    plot_files = []
+    
+    # Get the layout dimensions for export
+    layout_width = fig.layout.width or 1200
+    layout_height = fig.layout.height or (800 if len(metrics) == 1 else max(800, 350 * len(metrics)))
+    
+    # SVG export with explicit dimensions
+    svg_data = fig.to_image(format="svg", width=layout_width, height=layout_height).decode('utf-8')
+    svg_base64 = base64.b64encode(svg_data.encode('utf-8')).decode('utf-8')
+    plot_files.append({
+        'filename': f"{base_filename}.svg",
+        'type': 'svg',
+        'description': f'Weather Plot (SVG) - {base_filename}',
+        'data_url': f"data:image/svg+xml;base64,{svg_base64}"
+    })
+    
+    # PNG export with explicit dimensions
+    png_data = fig.to_image(format="png", width=layout_width, height=layout_height)
+    png_base64 = base64.b64encode(png_data).decode('utf-8')
+    plot_files.append({
+        'filename': f"{base_filename}.png",
+        'type': 'png',
+        'description': f'Weather Plot (PNG) - {base_filename}',
+        'data_url': f"data:image/png;base64,{png_base64}"
+    })
+    
+    # HTML export
+    html_data = fig.to_html(include_plotlyjs='cdn')
+    html_base64 = base64.b64encode(html_data.encode('utf-8')).decode('utf-8')
+    plot_files.append({
+        'filename': f"{base_filename}.html",
+        'type': 'html',
+        'description': f'Interactive Weather Plot (HTML) - {base_filename}',
+        'data_url': f"data:text/html;base64,{html_base64}"
+    })
+    
+    return plot_files
+
+def _create_excel_export(df_pivot, metrics: List[str], time_start: str, time_end: str, units: str = 'metric'):
+    """Create an Excel export of the weather data and return in-memory files."""
+    
+    # Create base filename with timestamp
+    safe_start = time_start.replace(' ', '_').replace(':', '-')
+    safe_end = time_end.replace(' ', '_').replace(':', '-')
+    base_filename = f"weather_data_{safe_start}_to_{safe_end}"
+    
+    # Reset index to make timestamp a column and format as string for Excel compatibility
+    df_export = df_pivot.reset_index()
+    df_export['timestamp'] = df_export['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')  # Convert to string format
+    
+    # Convert data to imperial if requested
+    if units == 'imperial':
+        for metric in metrics:
+            if metric in df_export.columns:
+                if metric == 'temperature':
+                    df_export[metric] = df_export[metric] * 9/5 + 32
+                elif metric == 'dew_point':
+                    df_export[metric] = df_export[metric] * 9/5 + 32
+                elif metric == 'pressure':
+                    df_export[metric] = df_export[metric] * 0.02953
+                elif metric in ['wind_speed', 'wind_gust']:
+                    df_export[metric] = df_export[metric] * 0.621371
+                elif metric == 'rain':
+                    df_export[metric] = df_export[metric] * 0.0393701
+    
+    df_export = df_export[['timestamp'] + [col for col in metrics if col in df_export.columns]]
+    
+    # Add units to column names based on unit system
+    unit_map = {
+        'temperature': '°C' if units == 'metric' else '°F',
+        'humidity': '%',
+        'dew_point': '°C' if units == 'metric' else '°F',
+        'pressure': 'mbar' if units == 'metric' else 'inHg',
+        'wind_speed': 'km/h' if units == 'metric' else 'mph',
+        'wind_gust': 'km/h' if units == 'metric' else 'mph',
+        'wind_direction': '°',
+        'solar_radiation': 'W/m²',
+        'rain': 'mm' if units == 'metric' else 'in'
+    }
+    
+    # Rename columns with units
+    column_mapping = {'timestamp': 'Timestamp'}
+    for col in df_export.columns:
+        if col in unit_map:
+            column_mapping[col] = f"{col.replace('_', ' ').title()} ({unit_map[col]})"
+    
+    df_export = df_export.rename(columns=column_mapping)
+    
+    # Generate in-memory files with base64 data URLs
+    excel_files = []
+    
+    # Excel (.xlsx) export
+    excel_buffer = io.BytesIO()
+    df_export.to_excel(excel_buffer, index=False, sheet_name='Weather Data', engine='openpyxl')
+    excel_buffer.seek(0)
+    excel_base64 = base64.b64encode(excel_buffer.getvalue()).decode('utf-8')
+    excel_files.append({
+        'filename': f"{base_filename}.xlsx",
+        'type': 'xlsx',
+        'description': f'Weather Data Excel File - {base_filename}',
+        'data_url': f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_base64}"
+    })
+    
+    # CSV export
+    csv_buffer = io.StringIO()
+    df_export.to_csv(csv_buffer, index=False)
+    csv_data = csv_buffer.getvalue()
+    csv_base64 = base64.b64encode(csv_data.encode('utf-8')).decode('utf-8')
+    excel_files.append({
+        'filename': f"{base_filename}.csv",
+        'type': 'csv',
+        'description': f'Weather Data CSV File - {base_filename}',
+        'data_url': f"data:text/csv;base64,{csv_base64}"
+    })
+    
+    print(f"Excel and CSV files generated in-memory: {base_filename}")
+    return excel_files
 
