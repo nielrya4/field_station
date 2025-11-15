@@ -14,7 +14,8 @@ pip install -r requirements.txt
 
 echo "Installing Chrome for kaleido..."
 # Install Chrome for plotly image generation
-echo "$PASSWORD" | sudo -S python -c "import kaleido; kaleido.get_chrome_sync()" || echo "Chrome installation failed, continuing..."
+echo "$PASSWORD" | sudo -S chmod a=rwx install_chrome.sh
+./install_chrome.sh
 
 deactivate
 
