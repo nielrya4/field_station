@@ -14,6 +14,7 @@ import matplotlib.dates as mdates
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from typing import List
+import math
 
 class WeatherData:
     def __init__(self, temperature=None, humidity=None, dew_point=None, pressure=None, 
@@ -565,7 +566,20 @@ def export_weather_data(metrics: List[str], output_types: List[str], time_start:
             continue
     
     if not processed_data:
-        raise ValueError("No valid data found for specified metrics in the time range")
+        # Debug: Log what sensors we actually found
+        unique_sensors = set()
+        for reading in raw_data[:100]:  # Check first 100 readings
+            sensor_sn = reading.get('sensor_sn')
+            if sensor_sn:
+                unique_sensors.add(sensor_sn)
+        
+        debug_msg = f"No valid data found for specified metrics in the time range. "
+        debug_msg += f"Requested metrics: {metrics}. "
+        debug_msg += f"Found sensors in data: {list(unique_sensors)}. "
+        debug_msg += f"Expected sensors: {[sensor_map.get(m, 'unknown') for m in metrics]}. "
+        debug_msg += f"Total raw readings: {len(raw_data)}."
+        
+        raise ValueError(debug_msg)
     
     # Convert to pandas DataFrame
     df = pd.DataFrame(processed_data)
