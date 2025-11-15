@@ -17,6 +17,7 @@ visit.register(app)
 weather.register(app)
 gallery.register(app)
 facilities.register(app)
+seismic.register(app)
 
 
 if __name__ == '__main__':
