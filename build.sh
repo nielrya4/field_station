@@ -14,8 +14,7 @@ pip install -r requirements.txt
 
 echo "Installing Chrome for kaleido..."
 # Install Chrome for plotly image generation
-echo "$PASSWORD" | sudo -S chmod a=rwx install_chrome.sh
-./install_chrome.sh
+echo "$PASSWORD" | sudo -S plotly_get_chrome
 
 deactivate
 
